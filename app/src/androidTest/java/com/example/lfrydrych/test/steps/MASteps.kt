@@ -46,6 +46,7 @@ class MASteps : ActivityInstrumentationTestCase2<MainActivity>(MainActivity::cla
     @Given("^App has started$")
     @Throws(Throwable::class)
     fun app_has_started() {
+        Thread.sleep(1000)
         onView(withText("Hello World!")).check(matches(isDisplayed()))
     }
 }
