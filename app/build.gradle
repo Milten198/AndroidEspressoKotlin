@@ -13,12 +13,33 @@ android {
         //testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
         testApplicationId "com.example.lfrydrych.test"
-        testInstrumentationRunner "com.example.lfrydrych.test.runner.Instrumentation"
+        testInstrumentationRunner "com.example.lfrydrych.test.cucumber.runner.Instrumentation"
     }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+
+        applicationVariants.all { variant ->
+            def applicationId = variant.applicationId
+            def adb = android.getAdbExecutable() as String
+            def variantName = variant.name.capitalize()
+
+            def grantPermissionTask = tasks.create("grant${variantName}Permission") {
+                doLast {
+                    "${adb} devices".execute().text.eachLine {
+                        if (it.endsWith("device")) {
+                            def device = it.split()[0]
+                            println "Granting permission on device ${device}"
+                            "${adb} -s ${device} shell pm grant ${applicationId} android.permission.WRITE_EXTERNAL_STORAGE".execute()
+                            "${adb} -s ${device} shell pm grant ${applicationId} android.permission.READ_EXTERNAL_STORAGE".execute()
+                        }
+                    }
+                }
+            }
+            grantPermissionTask.description = "Grants permissions on M+"
+            grantPermissionTask.group = "extras"
         }
     }
 
@@ -73,7 +94,48 @@ dependencies {
         exclude module: 'support-v4'
     }
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    androidTestCompile 'com.squareup.spoon:spoon-client:1.7.1'
 }
 repositories {
     mavenCentral()
+}
+
+task('cucumberRaports') {
+    def adb = android.getAdbExecutable() as String
+    def copyReportsTask = tasks.create("copyReports") {
+        doLast {
+
+            def reportDir = new File(project.buildDir, "cucumber-reports")
+            if (reportDir.exists()) {
+                reportDir.deleteDir()
+            }
+            if (!reportDir.exists()) {
+                reportDir.mkdirs()
+            }
+            "${adb} devices".execute().text.eachLine {
+                if (it.endsWith("device")) {
+                    def device = it.split()[0]
+                    def deviceDir = reportDir.getAbsolutePath().toString() + "/" + device.toString()
+                    println "Retrieving cucumber test report from device ${device} to ${deviceDir}"
+                    "${adb} -s ${device} pull /mnt/sdcard/cucumber-reports/ ${deviceDir}".execute()
+                }
+            }
+        }
+    }
+    copyReportsTask.description = "Get reports from device"
+    copyReportsTask.group = "extras"
+
+    def deleteOldReportsTask = tasks.create("deleteReports") {
+        doLast {
+            "${adb} devices".execute().text.eachLine {
+                if (it.endsWith("device")) {
+                    def device = it.split()[0]
+                    println "Delete cucumber test reports from device ${device}"
+                    "${adb} -s ${device} shell rm -rf /mnt/sdcard/cucumber-reports/".execute()
+                }
+            }
+        }
+    }
+    deleteOldReportsTask.description = "Delete old reports from device"
+    deleteOldReportsTask.group = "extras"
 }

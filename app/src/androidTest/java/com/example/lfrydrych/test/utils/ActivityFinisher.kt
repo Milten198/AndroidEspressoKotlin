@@ -1,4 +1,4 @@
-package com.example.lfrydrych.test
+package com.example.lfrydrych.test.utils
 
 import android.app.Activity
 import android.os.Handler

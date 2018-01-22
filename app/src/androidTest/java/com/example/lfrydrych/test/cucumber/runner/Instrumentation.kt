@@ -1,4 +1,4 @@
-package com.example.lfrydrych.test.runner
+package com.example.lfrydrych.test.cucumber.runner
 
 import android.os.Bundle
 

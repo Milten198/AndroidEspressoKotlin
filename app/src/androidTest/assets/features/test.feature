@@ -10,4 +10,4 @@ Feature: Simple test
 
   @test3
   Scenario: Test 3
-    Given App has started
+    Given App has started2
