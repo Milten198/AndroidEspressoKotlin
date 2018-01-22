@@ -52,7 +52,11 @@ android {
                 java.srcDirs = ['src/androidTest/java']
             }
         }
+        main.java.srcDirs += [file("$buildDir/generated/source/kapt/main")]
     }
+}
+kapt {
+    generateStubs = true
 }
 
 dependencies {
